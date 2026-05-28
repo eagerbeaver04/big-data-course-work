@@ -1,0 +1,52 @@
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.3
+    container_name: clickhouse
+    ports:
+      - "${DATABASE_DATA_PORT}:${DATABASE_DATA_PORT}"
+      - "${DATABASE_METRIC_PORT}:${DATABASE_METRIC_PORT}"
+    environment:
+      CLICKHOUSE_DB: ${CLICKHOUSE_DATABASE}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+    volumes:
+      - ./clickhouse/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: [ "CMD", "clickhouse-client", "--query", "SELECT 1" ]
+      interval: ${CLICKHOUSE_RETRIES}s
+      retries: ${CLICKHOUSE_RETRIES}
+
+  generator:
+    container_name: generator
+    env_file:
+      - .env
+    build:
+      context: .
+      dockerfile: ./generator/Dockerfile
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    restart: always
+
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: grafana
+    ports:
+      - "${GRAFANA_PORT:-3000}:${GRAFANA_PORT:-3000}"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_INSTALL_PLUGINS: grafana-clickhouse-datasource
+      GF_DATASOURCES_CLICKHOUSE_NAME: ClickHouse
+      GF_DATASOURCES_CLICKHOUSE_TYPE: grafana-clickhouse-datasource
+      GF_DATASOURCES_CLICKHOUSE_ACCESS: proxy
+      GF_DATASOURCES_CLICKHOUSE_URL: http://clickhouse:${DATABASE_METRIC_PORT}
+      GF_DATASOURCES_CLICKHOUSE_ISDEFAULT: "true"
+      GF_DATASOURCES_CLICKHOUSE_DATABASE: analytics
+      GF_DATASOURCES_CLICKHOUSE_USER: ${CLICKHOUSE_USER}
+      GF_DATASOURCES_CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+    volumes:
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+    depends_on:
+      clickhouse:
+        condition: service_healthy
