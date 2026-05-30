@@ -12,5 +12,5 @@ setup(
         "clickhouse-sqlalchemy>=0.2.0",
         "python-dotenv>=1.0.0",
     ],
-    python_requires=">=3.12",
+    python_requires=">=3.11",
 )

@@ -56,3 +56,78 @@ services:
       clickhouse:
         condition: service_healthy
     user: "0"
+
+  airflow:
+    build: ./airflow
+    container_name: airflow
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: sqlite:////opt/airflow/airflow.db
+    command: >
+      bash -c " airflow db migrate && airflow users create --username admin --password admin --firstname admin --lastname admin --role Admin --email admin@test.com || true && airflow standalone "
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./data:/opt/airflow/data
+      - ./spark:/opt/spark
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  spark-master:
+    build: ./spark
+    container_name: spark-master
+    command: >
+      /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master --host spark-master --port 7077 --webui-port 8080
+    ports:
+      - "7077:7077"
+      - "8081:8080"
+    environment:
+      - SPARK_MODE=master
+    volumes:
+      - ./spark/dags:/opt/spark/dags
+      - ./data:/opt/airflow/data
+
+  spark-worker-1:
+    build: ./spark
+    container_name: spark-worker-1
+    depends_on:
+      - spark-master
+    environment:
+      SPARK_MODE: worker
+      SPARK_MASTER_URL: spark://spark-master:7077
+    command: >
+      /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    volumes:
+      - ./spark/dags:/opt/spark/dags
+      - ./data:/opt/airflow/data
+
+  spark-worker-2:
+    build: ./spark
+    container_name: spark-worker-2
+    depends_on:
+      - spark-master
+    environment:
+      SPARK_MODE: worker
+      SPARK_MASTER_URL: spark://spark-master:7077
+    command: >
+      /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    volumes:
+      - ./spark/dags:/opt/spark/dags
+      - ./data:/opt/airflow/data
+
+  spark-worker-3:
+    build: ./spark
+    container_name: spark-worker-3
+    depends_on:
+      - spark-master
+    environment:
+      SPARK_MODE: worker
+      SPARK_MASTER_URL: spark://spark-master:7077
+    command: >
+      /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    volumes:
+      - ./spark/dags:/opt/spark/dags
+      - ./data:/opt/airflow/data
