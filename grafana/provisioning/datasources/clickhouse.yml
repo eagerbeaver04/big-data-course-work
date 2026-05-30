@@ -1,13 +1,13 @@
 apiVersion: 1
 datasources:
-  - name: ClickHouse
-    type: grafana-clickhouse-datasource
-    uid: clickhouse
+  - name: ${GF_DATASOURCES_CLICKHOUSE_NAME}
+    type: ${GF_DATASOURCES_CLICKHOUSE_TYPE}
+    uid: ${GF_DATASOURCES_CLICKHOUSE_HOST}
     jsonData:
-      host: clickhouse
-      port: 9000
-      username: admin
-      defaultDatabase: analytics
-      protocol: native
+      host: ${GF_DATASOURCES_CLICKHOUSE_HOST}
+      port: ${GF_DATASOURCES_CLICKHOUSE_PORT}
+      username: ${GF_DATASOURCES_CLICKHOUSE_USER}
+      defaultDatabase: ${GF_DATASOURCES_CLICKHOUSE_DATABASE}
+      protocol: ${GF_DATASOURCES_CLICKHOUSE_ACCESS}
     secureJsonData:
-      password: admin123
+      password: ${GF_DATASOURCES_CLICKHOUSE_PASSWORD}
