@@ -1,25 +1,15 @@
 import random
 import time
-from sqlalchemy import Table, Column, Integer, Float, MetaData
 
 from utils.click_house_session import ClickHouseSession, ClickHouseConfig
 from utils.load_db_env import load_db_env
-
-metadata = MetaData()
-events = Table(
-    "events",
-    metadata,
-    Column("id", Integer),
-    Column("x1", Float),
-    Column("x2", Float),
-    Column("x3", Float),
-    Column("label", Float),
-)
+from utils.tables import get_event_table
 
 
 def main():
     config: ClickHouseConfig = load_db_env()
     with ClickHouseSession(config) as session:
+        events = get_event_table()
         while True:
             feature1 = random.uniform(0, 100)
             feature2 = random.uniform(0, 50)

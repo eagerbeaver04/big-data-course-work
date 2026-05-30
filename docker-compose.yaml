@@ -46,7 +46,9 @@ services:
       GF_DATASOURCES_CLICKHOUSE_USER: ${CLICKHOUSE_USER}
       GF_DATASOURCES_CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
     volumes:
-      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/etc/grafana/dashboards
     depends_on:
       clickhouse:
         condition: service_healthy
+    user: "0"
